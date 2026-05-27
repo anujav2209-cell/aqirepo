@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Air Quality Index (AQI) forecasting system utilizing machine learning and real-time OpenAQ data.">
+    <title>AeroCast - AI AQI Forecasting System</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #080c14;
+            --bg-secondary: rgba(17, 24, 39, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f97316;
+            --accent-red: #ef4444;
+            --glass-bg: rgba(15, 23, 42, 0.55);
+            --glow-color: rgba(59, 130, 246, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 45%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 2rem 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .logo-icon svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: white;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #ffffff 60%, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 1.5rem 3rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-section {
+            text-align: center;
+            max-width: 600px;
+            margin: 1.5rem auto 2rem auto;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #ffffff, #93c5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .search-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 1.25rem;
+            padding: 1px;
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.25rem;
+            height: 1.25rem;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.875rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: #ffffff;
+            border: none;
+            padding: 0 1.75rem;
+            border-radius: 0.875rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+            filter: brightness(1.1);
+        }
+
+        .search-btn:active {
+            transform: translateY(1px);
+        }
+
+        .dashboard {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @media (min-width: 900px) {
+            .dashboard {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            position: relative;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 1.25rem;
+            padding: 1px;
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.08), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .prediction-box {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.875rem;
+            border-radius: 2rem;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .val-display {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.025em;
+            background: linear-gradient(180deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0.5rem 0;
+            position: relative;
+        }
+
+        .unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            vertical-align: middle;
+            margin-left: 0.25rem;
+            -webkit-text-fill-color: initial;
+        }
+
+        .status-badge {
+            font-size: 1.25rem;
+            font-weight: 700;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.75rem;
+            width: 100%;
+            text-align: center;
+            margin-top: 0.5rem;
+            border: 1px solid transparent;
+        }
+
+        .advisory-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .meta-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.875rem;
+            padding-bottom: 0.875rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .meta-icon {
+            width: 2rem;
+            height: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--accent-blue);
+        }
+
+        .meta-icon svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .meta-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .meta-val {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .chart-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-container {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            min-height: 280px;
+        }
+
+        .skeleton-loader {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 900px) {
+            .skeleton-loader {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        .skeleton-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            height: 280px;
+            padding: 1.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            transform: translateX(-100%);
+            animation: pulse 1.6s infinite;
+        }
+
+        @keyframes pulse {
+            100% { transform: translateX(100%); }
+        }
+
+        .skeleton-line {
+            height: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+        }
+
+        .skeleton-line.title { width: 40%; height: 1.25rem; }
+        .skeleton-line.circle { width: 120px; height: 120px; border-radius: 50%; margin: 1.5rem auto; }
+        .skeleton-line.text1 { width: 80%; margin: 0 auto 0.5rem auto; }
+        .skeleton-line.text2 { width: 60%; margin: 0 auto; }
+
+        .error-alert {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 1rem 1.25rem;
+            border-radius: 0.875rem;
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+            align-items: center;
+            gap: 0.75rem;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .error-alert svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        footer {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+            margin-top: auto;
+        }
+
+        footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent-purple);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/>
+                </svg>
+            </div>
+            <h1>AeroCast AI</h1>
+        </div>
+        <div class="badge" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #c084fc;">
+            Machine Learning v2.0
+        </div>
+    </header>
+
+    <main>
+        <div class="hero-section">
+            <h2 class="hero-title">Air Quality Forecaster</h2>
+            <p class="hero-subtitle">Enter any city worldwide to fetch real-time PM2.5 monitoring data and predict tomorrow's air quality using machine learning.</p>
+        </div>
+
+        <section class="search-card">
+            <div class="search-container">
+                <div class="input-wrapper">
+                    <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="city" 
+                        class="search-input" 
+                        placeholder="Search city (e.g. London, New York, Tokyo)" 
+                        onkeydown="if(event.key === 'Enter') predictAQI()"
+                        required
+                    >
+                </div>
+                <button id="searchBtn" class="search-btn" onclick="predictAQI()">
+                    <span>Predict</span>
+                    <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Error Alert -->
+        <div id="errorAlert" class="error-alert">
+            <svg viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <span id="errorMessage">An error occurred.</span>
+        </div>
+
+        <!-- Skeleton Loaders -->
+        <section id="skeletonLoader" class="skeleton-loader">
+            <div class="skeleton-card">
+                <div class="skeleton-line title"></div>
+                <div class="skeleton-line circle"></div>
+                <div class="skeleton-line text1"></div>
+                <div class="skeleton-line text2"></div>
+            </div>
+            <div class="skeleton-card" style="height: 420px;">
+                <div class="skeleton-line title" style="width: 25%;"></div>
+                <div class="skeleton-line" style="height: 250px; margin-top: 2rem; border-radius: 0.5rem;"></div>
+            </div>
+        </section>
+
+        <!-- Dashboard Dashboard -->
+        <section id="dashboard" class="dashboard">
+            <!-- Col 1: Metrics -->
+            <div class="dashboard-col">
+                <!-- Prediction Card -->
+                <div class="glass-card">
+                    <div class="card-title">
+                        <svg style="width: 1rem; height: 1rem; color: var(--accent-purple);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        AI Forecast (Tomorrow)
+                    </div>
+                    <div class="prediction-box">
+                        <div class="val-display">
+                            <span id="predictedVal">--</span><span class="unit">µg/m³</span>
+                        </div>
+                        <div id="predictedBadge" class="status-badge">--</div>
+                        <p id="predictedDesc" class="advisory-text">Enter a location to analyze forecasted particulate matter pollution levels.</p>
+                    </div>
+                </div>
+
+                <!-- Location Details Card -->
+                <div class="glass-card">
+                    <div class="card-title">
+                        <svg style="width: 1rem; height: 1rem; color: var(--accent-blue);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Station Info
+                    </div>
+                    <div class="meta-list">
+                        <div class="meta-item">
+                            <div class="meta-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            </div>
+                            <div class="meta-content">
+                                <span class="meta-label">Monitoring Station</span>
+                                <span id="metaStation" class="meta-val">--</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            </div>
+                            <div class="meta-content">
+                                <span class="meta-label">Geocoded Location</span>
+                                <span id="metaLocation" class="meta-val">--</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                            </div>
+                            <div class="meta-content">
+                                <span class="meta-label">Current PM2.5</span>
+                                <span id="metaCurrent" class="meta-val">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Col 2: Chart -->
+            <div class="dashboard-col">
+                <div class="glass-card chart-card">
+                    <div class="card-title">
+                        <svg style="width: 1rem; height: 1rem; color: var(--accent-green);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Historical Trend (Recent Measurements)
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 AeroCast AI. Powered by <a href="https://openaq.org" target="_blank" rel="noopener">OpenAQ API v3</a> and <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap Geocoding</a>.</p>
+    </footer>
+
+    <script>
+        let myChart = null;
+
+        function getAQIStatus(pm25) {
+            if (pm25 <= 12.0) {
+                return {
+                    label: "Good",
+                    color: "#10b981",
+                    bg: "rgba(16, 185, 129, 0.12)",
+                    border: "rgba(16, 185, 129, 0.3)",
+                    desc: "Air quality is satisfactory, and air pollution poses little or no risk."
+                };
+            } else if (pm25 <= 35.4) {
+                return {
+                    label: "Moderate",
+                    color: "#f59e0b",
+                    bg: "rgba(245, 158, 11, 0.12)",
+                    border: "rgba(245, 158, 11, 0.3)",
+                    desc: "Air quality is acceptable. However, there may be a risk for some people, particularly those who are unusually sensitive to air pollution."
+                };
+            } else if (pm25 <= 55.4) {
+                return {
+                    label: "Sensitive Groups",
+                    color: "#f97316",
+                    bg: "rgba(249, 115, 22, 0.12)",
+                    border: "rgba(249, 115, 22, 0.3)",
+                    desc: "Members of sensitive groups may experience health effects. The general public is less likely to be affected."
+                };
+            } else if (pm25 <= 150.4) {
+                return {
+                    label: "Unhealthy",
+                    color: "#ef4444",
+                    bg: "rgba(239, 68, 68, 0.12)",
+                    border: "rgba(239, 68, 68, 0.3)",
+                    desc: "Some members of the general public may experience health effects; sensitive groups may face more serious health effects."
+                };
+            } else if (pm25 <= 250.4) {
+                return {
+                    label: "Very Unhealthy",
+                    color: "#8b5cf6",
+                    bg: "rgba(139, 92, 246, 0.12)",
+                    border: "rgba(139, 92, 246, 0.3)",
+                    desc: "Health alert: The risk of health effects is increased for everyone."
+                };
+            } else {
+                return {
+                    label: "Hazardous",
+                    color: "#b91c1c",
+                    bg: "rgba(185, 28, 28, 0.15)",
+                    border: "rgba(185, 28, 28, 0.4)",
+                    desc: "Health warning of emergency conditions: everyone is more likely to experience serious health symptoms."
+                };
+            }
+        }
+
+        async function predictAQI() {
+            const cityInput = document.getElementById("city");
+            const city = cityInput.value.trim();
+            if (!city) return;
+
+            const searchBtn = document.getElementById("searchBtn");
+            const dashboard = document.getElementById("dashboard");
+            const skeleton = document.getElementById("skeletonLoader");
+            const errorAlert = document.getElementById("errorAlert");
+
+            // UI Loading state
+            searchBtn.disabled = true;
+            searchBtn.style.opacity = "0.7";
+            errorAlert.style.display = "none";
+            dashboard.style.display = "none";
+            skeleton.style.display = "grid";
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ city: city })
+                });
+
+                if (!response.ok) {
+                    throw new Error("HTTP error " + response.status);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Render metrics
+                document.getElementById("predictedVal").innerText = data.predicted_pm25.toFixed(1);
+                
+                const status = getAQIStatus(data.predicted_pm25);
+                const predictedBadge = document.getElementById("predictedBadge");
+                predictedBadge.innerText = status.label;
+                predictedBadge.style.color = status.color;
+                predictedBadge.style.backgroundColor = status.bg;
+                predictedBadge.style.borderColor = status.border;
+                document.getElementById("predictedDesc").innerText = status.desc;
+
+                document.getElementById("metaStation").innerText = data.location_name;
+                document.getElementById("metaLocation").innerText = data.display_name;
+                document.getElementById("metaCurrent").innerText = data.current_pm25.toFixed(1) + " µg/m³";
+
+                // Render Chart
+                renderChart(data.historical_values);
+
+                // Show dashboard
+                skeleton.style.display = "none";
+                dashboard.style.display = "grid";
+
+            } catch (err) {
+                skeleton.style.display = "none";
+                document.getElementById("errorMessage").innerText = err.message || "Failed to load forecasting data.";
+                errorAlert.style.display = "flex";
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.style.opacity = "1";
+            }
+        }
+
+        function renderChart(history) {
+            const ctx = document.getElementById("trendChart").getContext("2d");
+            
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            // Create index labels (1 to N)
+            const labels = history.map((_, index) => `#${index + 1}`);
+
+            // Dynamic gradient fill for the chart line area
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.45)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'PM2.5 (µg/m³)',
+                        data: history,
+                        borderColor: '#3b82f6',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#60a5fa',
+                        pointBorderColor: 'rgba(255,255,255,0.1)',
+                        pointHoverBackgroundColor: '#ffffff',
+                        pointHoverRadius: 6,
+                        pointRadius: 3,
+                        fill: true,
+                        backgroundColor: gradient,
+                        tension: 0.45
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#9ca3af',
+                            bodyColor: '#f3f4f6',
+                            borderColor: 'rgba(255,255,255,0.08)',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return 'Measurement point ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return 'PM2.5: ' + context.raw.toFixed(1) + ' µg/m³';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: {
+                                    family: 'Outfit'
+                                },
+                                maxTicksLimit: 12
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: {
+                                    family: 'Outfit'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
