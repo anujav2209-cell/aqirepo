@@ -1,0 +1,13 @@
+{
+  "model_type": "XGBoost",
+  "r2_score": 0.7784,
+  "rmse": 9.407,
+  "mae": 7.119,
+  "top_features": {
+    "rolling_7d_aqi": 0.5661056637763977,
+    "rolling_3d_aqi": 0.07973045110702515,
+    "day_of_week": 0.04063716158270836,
+    "district_Ernakulam": 0.023406852036714554,
+    "pm10": 0.016545819118618965
+  }
+}

@@ -1,0 +1,153 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  background-color: #030303;
+  color: #fafafa;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+}
+
+/* Custom Webkit scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Aurora background gradients */
+.bg-aurora-glow {
+  background: radial-gradient(circle at 20% 30%, rgba(20, 184, 166, 0.15) 0%, transparent 40%),
+              radial-gradient(circle at 80% 70%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
+              radial-gradient(circle at 50% 10%, rgba(168, 85, 247, 0.1) 0%, transparent 40%),
+              #030303;
+}
+
+/* Floating Blob Keyframes */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.08) rotate(180deg);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0px) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(15px) scale(0.95) rotate(-120deg);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 15s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 12s ease-in-out infinite;
+}
+
+/* Leaflet Dark Customizations */
+.leaflet-container {
+  background: #09090b !important;
+  font-family: inherit !important;
+}
+
+/* Dark mode overrides for Leaflet Popups */
+.aqi-map-popup .leaflet-popup-content-wrapper {
+  background: #09090b !important;
+  color: #f4f4f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.aqi-map-popup .leaflet-popup-content {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.aqi-map-popup .leaflet-popup-tip {
+  background: #09090b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #a1a1aa !important;
+  padding: 6px !important;
+  font-size: 16px !important;
+  top: 4px !important;
+  right: 4px !important;
+}
+.leaflet-popup-close-button:hover {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.leaflet-bar {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: #09090b !important;
+  color: #a1a1aa !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.2s;
+}
+
+.leaflet-bar a:hover {
+  background-color: #18181b !important;
+  color: #ffffff !important;
+}
+
+.leaflet-control-zoom {
+  margin-top: 20px !important;
+  margin-left: 20px !important;
+}
+
+/* Hide leaflet attribution on map to keep UI clean */
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #71717a !important;
+  font-size: 8px !important;
+}
+.leaflet-control-attribution a {
+  color: #a1a1aa !important;
+}
+
+/* Free, watermark-free dark theme styling for OpenStreetMap tiles */
+.dark-map-tiles,
+.dark-map-tiles .leaflet-tile,
+.leaflet-tile.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(90%) grayscale(20%) !important;
+}
+
